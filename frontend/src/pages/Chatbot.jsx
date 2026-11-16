@@ -106,7 +106,7 @@ function Chatbot() {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/chat",
+        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/chat`,
         formData,
         {
           headers: {
@@ -128,7 +128,7 @@ function Chatbot() {
 
       toast.error(
         error.response?.data?.message ||
-          "Unable to get AI response."
+        "Unable to get AI response."
       );
     } finally {
       setLoading(false);
