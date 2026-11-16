@@ -1,12 +1,8 @@
-from fastapi import FastAPI, File, UploadFile
-from PIL import Image
-import tensorflow as tf
-import numpy as np
-import io
-import json
+
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
+from pathlib import Path
 import tensorflow as tf
 import numpy as np
 import io
@@ -17,24 +13,30 @@ app = FastAPI(
     version="1.0"
 )
 
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "http://127.0.0.1:5173"
+        "http://127.0.0.1:5173",
+        "https://intelligent-farming-assistant-eight.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Resolve model paths relative to this file
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_DIR = BASE_DIR / "model"
+
 # Load model
 model = tf.keras.models.load_model(
-    "model/plant_disease_model.keras"
+    str(MODEL_DIR / "plant_disease_model.keras")
 )
 
 # Load class names
-with open("model/class_names.json", "r") as file:
+with open(MODEL_DIR / "class_names.json", "r") as file:
     class_names = json.load(file)
 
 
@@ -65,7 +67,7 @@ async def predict(file: UploadFile = File(...)):
         io.BytesIO(image_bytes)
     ).convert("RGB")
 
-    # Resize according to model input
+    # Resize image
     image = image.resize((128, 128))
 
     # Convert to NumPy
@@ -75,29 +77,19 @@ async def predict(file: UploadFile = File(...)):
     image_array = image_array / 255.0
 
     # Add batch dimension
-    image_array = np.expand_dims(
-        image_array,
-        axis=0
-    )
+    image_array = np.expand_dims(image_array, axis=0)
 
     # Prediction
-    predictions = model.predict(
-        image_array,
-        verbose=0
-    )
+    predictions = model.predict(image_array, verbose=0)
 
     # Get class index
-    predicted_index = int(
-        np.argmax(predictions[0])
-    )
+    predicted_index = int(np.argmax(predictions[0]))
 
     # Get disease name
     predicted_class = class_names[predicted_index]
 
     # Get confidence
-    confidence = float(
-        np.max(predictions[0]) * 100
-    )
+    confidence = float(np.max(predictions[0]) * 100)
 
     return {
         "disease": predicted_class,
