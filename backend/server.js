@@ -12,12 +12,13 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
+  credentials: true,
+}));
 
 app.use(express.json());
 
