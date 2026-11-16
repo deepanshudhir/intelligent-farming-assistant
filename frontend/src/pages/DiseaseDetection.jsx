@@ -39,7 +39,7 @@ function DiseaseDetection() {
 
       // Step 1: Get prediction from FastAPI
       const response = await axios.post(
-        "http://localhost:8000/predict",
+        `${import.meta.env.VITE_ML_API_URL}/predict`,
         formData
       );
 
